@@ -1,0 +1,46 @@
+{
+  "name": "pg-aequor",
+  "version": "0.1.1",
+  "description": "Crash-safe, coordination-aware PostgreSQL client for Serverless environments",
+  "main": "./index.js",
+  "types": "index.d.ts",
+  "author": "dimaq12",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/dimaq12/pg-aequor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dimaq12/pg-aequor/issues"
+  },
+  "homepage": "https://github.com/dimaq12/pg-aequor#readme",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "require": "./index.js"
+    }
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test"
+  },
+  "peerDependencies": {
+    "pg": "^8.11.0"
+  },
+  "devDependencies": {
+    "pg": "^8.11.0"
+  }
+}
