@@ -39,7 +39,7 @@ const client = new ServerlessClient({
   database: process.env.DB_NAME,
 
   // Coordination Secret (distinct from DB password)
-  secret: process.env.COORD_SECRET,
+  coordinationSecret: process.env.COORD_SECRET,
 })
 
 await client.connect()
@@ -69,8 +69,8 @@ We solve this via:
 
 | Option | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `secret` | `string` | _(required)_ | Shared secret for HMAC signing. **Do not** use DB password. Must be at least 16 bytes. |
-| `leaseMode` | `'required' \| 'optional'` | `'required'` | If `optional` and `secret` is missing: lease/reaper/heartbeat are disabled. |
+| `coordinationSecret` | `string` | _(required)_ | Shared secret for HMAC signing. **Do not** use DB password. Must be at least 16 bytes. |
+| `leaseMode` | `'required' \| 'optional'` | `'required'` | If `optional` and `coordinationSecret` is missing: lease/reaper/heartbeat are disabled. |
 | `leaseTtlMs` | `number` | `90000` | Lease TTL. |
 | `reaper` | `boolean` | `true` | Enable/disable reaper. |
 | `reaperRunProbability` | `number` | `0.1` | Probability of trying a reaper pass on connect (0..1). |
@@ -97,7 +97,7 @@ const { ServerlessClient } = require('pg-aequor')
 
 const client = new ServerlessClient({
   // ...pg config...
-  secret: process.env.COORD_SECRET,
+  coordinationSecret: process.env.COORD_SECRET,
 
   hooks: {
     onQueryRetry: ({ retries, err }) => {

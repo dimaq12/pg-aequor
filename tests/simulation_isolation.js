@@ -43,45 +43,45 @@ if (process.argv[2] !== 'worker') {
     
     const processes = []
     
-    // 1. Spawn TARGET Zombies (service='target', secret='secret-A')
+    // 1. Spawn TARGET Zombies (service='target', coordinationSecret='secret-A')
     // These SHOULD be killed by Reaper A.
     console.log('[MASTER] Spawning 10 TARGET zombies (should die)...')
     for (let i = 0; i < TARGET_ZOMBIES; i++) {
       processes.push(spawnWorker(`target-${i}`, 'zombie', { 
         serviceName: 'target-service', 
-        secret: 'secret-AAAAAAAAAAAAAAAA' 
+        coordinationSecret: 'secret-AAAAAAAAAAAAAAAA' 
       }))
     }
 
-    // 2. Spawn NEIGHBOR Zombies (service='neighbor', secret='secret-B')
+    // 2. Spawn NEIGHBOR Zombies (service='neighbor', coordinationSecret='secret-B')
     // These SHOULD NOT be touched by Reaper A.
     console.log('[MASTER] Spawning 10 NEIGHBOR zombies (should survive Reaper A)...')
     for (let i = 0; i < NEIGHBOR_ZOMBIES; i++) {
       processes.push(spawnWorker(`neighbor-${i}`, 'zombie', { 
         serviceName: 'neighbor-service', 
-        secret: 'secret-BBBBBBBBBBBBBBBB' 
+        coordinationSecret: 'secret-BBBBBBBBBBBBBBBB' 
       }))
     }
 
-    // 3. Spawn IMPOSTOR Zombies (service='target', secret='secret-FAKE')
+    // 3. Spawn IMPOSTOR Zombies (service='target', coordinationSecret='secret-FAKE')
     // These have the SAME service name but WRONG signature.
     // These SHOULD NOT be touched by Reaper A (invalid signature).
     console.log('[MASTER] Spawning 5 IMPOSTOR zombies (should survive due to bad signature)...')
     for (let i = 0; i < IMPOSTOR_ZOMBIES; i++) {
       processes.push(spawnWorker(`impostor-${i}`, 'zombie', { 
         serviceName: 'target-service', 
-        secret: 'secret-FAKE-Key-Must-Be-16' 
+        coordinationSecret: 'secret-FAKE-Key-Must-Be-16' 
       }))
     }
     
     // Wait for zombies to connect and go idle
     await new Promise(r => setTimeout(r, LEASE_TTL_MS + 2000))
 
-    // 4. Run Reaper A (service='target', secret='secret-A')
+    // 4. Run Reaper A (service='target', coordinationSecret='secret-A')
     console.log('[MASTER] Unleashing Reaper A (target-service)...')
     const reaperA = spawnWorker('reaper-A', 'reaper', { 
         serviceName: 'target-service', 
-        secret: 'secret-AAAAAAAAAAAAAAAA' 
+        coordinationSecret: 'secret-AAAAAAAAAAAAAAAA' 
     })
     
     // Wait for Reaper A to do its job
@@ -117,7 +117,7 @@ else {
     database: url.pathname.slice(1),
     ssl: url.hostname === 'localhost' || url.hostname === '127.0.0.1' ? false : { rejectUnauthorized: false },
     
-    secret: config.secret,
+    coordinationSecret: config.coordinationSecret,
     serviceName: config.serviceName,
     
     leaseTtlMs: Number(process.env.LEASE_TTL_MS),

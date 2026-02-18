@@ -55,7 +55,7 @@ describe('ServerlessClient heartbeat', () => {
       host: 'x',
       user: 'u',
       password: 'p',
-      secret: 'coord-secret-123456',
+      coordinationSecret: 'coord-secret-123456',
       database: 'd',
       library: lib,
       // make lease almost expired so hard-wait path runs
@@ -88,7 +88,7 @@ describe('ServerlessClient heartbeat', () => {
       host: 'x',
       user: 'u',
       password: 'p',
-      secret: 'coord-secret-123456',
+      coordinationSecret: 'coord-secret-123456',
       database: 'd',
       library: lib,
       leaseTtlMs: 10,
@@ -108,7 +108,7 @@ describe('ServerlessClient heartbeat', () => {
     assert.strictEqual(c._isDead, true)
   })
 
-  test('optional lease mode without secret disables lease/reaper/heartbeat but still connects', async () => {
+  test('optional lease mode without coordinationSecret disables lease/reaper/heartbeat but still connects', async () => {
     const lib = makeFakePgLibrary()
     const c = new ServerlessClient({
       host: 'x',
@@ -116,7 +116,7 @@ describe('ServerlessClient heartbeat', () => {
       database: 'd',
       library: lib,
       leaseMode: 'optional',
-      reaper: true, // should be disabled due to no secret
+      reaper: true, // should be disabled due to no coordinationSecret
     })
     await c.connect()
     assert.ok(c._client) // connected

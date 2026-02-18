@@ -30,7 +30,7 @@ async function runClient(id) {
     database: url.pathname.slice(1),
     ssl: url.hostname === 'localhost' || url.hostname === '127.0.0.1' ? false : { rejectUnauthorized: false },
     
-    secret: 'limit-test-secret',
+    coordinationSecret: 'limit-test-secret',
     serviceName: 'limit-test',
     
     // Tuning

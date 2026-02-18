@@ -1,6 +1,6 @@
 {
   "name": "pg-aequor",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Crash-safe, coordination-aware PostgreSQL client for Serverless environments",
   "main": "./index.js",
   "types": "index.d.ts",

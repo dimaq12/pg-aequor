@@ -48,7 +48,7 @@ describe('ServerlessClient generation guard', () => {
       user: 'u',
       password: 'p',
       database: 'd',
-      secret: 'coord-secret-123456',
+      coordinationSecret: 'coord-secret-123456',
       library: lib,
       reaper: false,
       leaseTtlMs: 1000,

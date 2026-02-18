@@ -95,7 +95,7 @@ else {
     ssl: url.hostname === 'localhost' || url.hostname === '127.0.0.1' ? false : { rejectUnauthorized: false }, // No SSL for local docker
     
     // Coordination Config
-    secret: 'test-secret-must-be-long-enough-16B',
+    coordinationSecret: 'test-secret-must-be-long-enough-16B',
     serviceName: 'load-test',
     
     // Test Tunings

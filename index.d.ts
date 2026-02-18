@@ -50,10 +50,10 @@ export interface ServerlessClientHooks {
 
 export interface ServerlessClientConfig extends ClientConfig {
   /**
-   * Shared secret for signing leases. Required if leaseMode is 'required'.
+   * Shared coordination secret for signing leases. Required if leaseMode is 'required'.
    * Conceptually distinct from DB password. Must be at least 16 bytes.
    */
-  secret?: string;
+  coordinationSecret?: string;
 
   /**
    * Logical name of the service using this client. Used for advisory lock namespace.
@@ -63,8 +63,8 @@ export interface ServerlessClientConfig extends ClientConfig {
 
   /**
    * Coordination mode.
-   * - 'required': throws if secret is missing (default).
-   * - 'optional': disables lease/reaper if secret is missing.
+   * - 'required': throws if coordinationSecret is missing (default).
+   * - 'optional': disables lease/reaper if coordinationSecret is missing.
    */
   leaseMode?: 'required' | 'optional';
 

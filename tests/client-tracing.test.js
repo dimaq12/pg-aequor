@@ -50,7 +50,7 @@ describe('ServerlessClient tracing hooks', () => {
       host: 'x',
       user: 'u',
       database: 'd',
-      secret: 'coord-secret-123456',
+      coordinationSecret: 'coord-secret-123456',
       library: lib,
       reaper: false,
       hooks: {
@@ -80,7 +80,7 @@ describe('ServerlessClient tracing hooks', () => {
       host: 'x',
       user: 'u',
       database: 'd',
-      secret: 'coord-secret-123456',
+      coordinationSecret: 'coord-secret-123456',
       library: lib,
       reaper: false,
       retries: 0, // fail fast
