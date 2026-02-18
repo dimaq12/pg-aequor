@@ -7,7 +7,7 @@
  *   DB_CONN_STRING="postgresql://user:pass@host:5432/db" node tests/simulation_limits.js
  */
 
-const { ServerlessClient } = require('../index')
+const { AequorClient } = require('../index')
 
 // Constants
 const CLIENTS_COUNT = 150
@@ -22,7 +22,7 @@ if (!dbUrl) {
 const url = new URL(dbUrl)
 
 async function runClient(id) {
-  const client = new ServerlessClient({
+const client = new AequorClient({
     user: url.username,
     password: url.password,
     host: url.hostname,

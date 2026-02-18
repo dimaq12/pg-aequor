@@ -101,7 +101,7 @@ if (process.argv[2] !== 'worker') {
 
 // --- WORKER PROCESS ---
 else {
-  const { ServerlessClient } = require('../index')
+  const { AequorClient } = require('../index')
   
   const id = process.env.WORKER_ID
   const type = process.env.WORKER_TYPE
@@ -109,7 +109,7 @@ else {
   
   const url = new URL(process.env.DB_CONN_STRING)
   
-  const client = new ServerlessClient({
+  const client = new AequorClient({
     user: url.username,
     password: url.password,
     host: url.hostname,

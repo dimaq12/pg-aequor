@@ -1,6 +1,6 @@
 import { Client, ClientConfig, QueryResult, QueryResultRow } from 'pg';
 
-export interface ServerlessClientHooks {
+export interface AequorClientHooks {
   /**
    * Called when a new database connection is successfully established.
    */
@@ -48,7 +48,7 @@ export interface ServerlessClientHooks {
   onQueryError?: (payload: { args: any[]; err: Error; duration: number }) => void;
 }
 
-export interface ServerlessClientConfig extends ClientConfig {
+export interface AequorClientConfig extends ClientConfig {
   /**
    * Shared coordination secret for signing leases. Required if leaseMode is 'required'.
    * Conceptually distinct from DB password. Must be at least 16 bytes.
@@ -149,7 +149,7 @@ export interface ServerlessClientConfig extends ClientConfig {
   /**
    * Observability hooks.
    */
-  hooks?: ServerlessClientHooks;
+  hooks?: AequorClientHooks;
 
   /**
    * Debug logging (console.log). Default: false.
@@ -166,8 +166,8 @@ export interface ServerlessClientConfig extends ClientConfig {
   applicationName?: string;
 }
 
-export class ServerlessClient {
-  constructor(config: ServerlessClientConfig);
+export class AequorClient {
+  constructor(config: AequorClientConfig);
 
   /**
    * Establishes a connection (if not already connected) and acquires a lease.

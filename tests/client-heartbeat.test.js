@@ -1,7 +1,7 @@
 const { test, describe } = require('node:test')
 const assert = require('node:assert')
 
-const ServerlessClient = require('../lib/client')
+const AequorClient = require('../lib/client')
 
 class FakePgClient {
   constructor() {
@@ -47,11 +47,11 @@ function makeFakePgLibrary() {
   return { Client, instances }
 }
 
-describe('ServerlessClient heartbeat', () => {
+describe('AequorClient heartbeat', () => {
   test('hard-wait heartbeat failure triggers reconnect by default', async () => {
     const lib = makeFakePgLibrary()
 
-    const c = new ServerlessClient({
+    const c = new AequorClient({
       host: 'x',
       user: 'u',
       password: 'p',
@@ -84,7 +84,7 @@ describe('ServerlessClient heartbeat', () => {
   test('heartbeat timeout triggers reconnect by default', async () => {
     const lib = makeFakePgLibrary()
 
-    const c = new ServerlessClient({
+    const c = new AequorClient({
       host: 'x',
       user: 'u',
       password: 'p',
@@ -110,7 +110,7 @@ describe('ServerlessClient heartbeat', () => {
 
   test('optional lease mode without coordinationSecret disables lease/reaper/heartbeat but still connects', async () => {
     const lib = makeFakePgLibrary()
-    const c = new ServerlessClient({
+    const c = new AequorClient({
       host: 'x',
       user: 'u',
       database: 'd',

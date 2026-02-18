@@ -1,7 +1,7 @@
 const { test, describe } = require('node:test')
 const assert = require('node:assert')
 
-const ServerlessClient = require('../lib/client')
+const AequorClient = require('../lib/client')
 
 class FakePgClient {
   constructor() {
@@ -52,11 +52,11 @@ function makeFakePgLibrary() {
   return { Client, instances }
 }
 
-describe('ServerlessClient hooks', () => {
+describe('AequorClient hooks', () => {
   test('onConnect is called on successful connect', async () => {
     const lib = makeFakePgLibrary()
     const calls = []
-    const c = new ServerlessClient({
+    const c = new AequorClient({
       host: 'x',
       user: 'u',
       password: 'p',
@@ -77,7 +77,7 @@ describe('ServerlessClient hooks', () => {
   test('onHeartbeat and onHeartbeatFail fire appropriately', async () => {
     const lib = makeFakePgLibrary()
     const calls = []
-    const c = new ServerlessClient({
+    const c = new AequorClient({
       host: 'x',
       user: 'u',
       password: 'p',
@@ -113,7 +113,7 @@ describe('ServerlessClient hooks', () => {
   test('onClientDead is called when pg emits error', async () => {
     const lib = makeFakePgLibrary()
     const calls = []
-    const c = new ServerlessClient({
+    const c = new AequorClient({
       host: 'x',
       user: 'u',
       password: 'p',
@@ -138,7 +138,7 @@ describe('ServerlessClient hooks', () => {
   test('onQueryRetry is called on retryable query error', async () => {
     const lib = makeFakePgLibrary()
     const calls = []
-    const c = new ServerlessClient({
+    const c = new AequorClient({
       host: 'x',
       user: 'u',
       password: 'p',

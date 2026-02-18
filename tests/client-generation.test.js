@@ -1,7 +1,7 @@
 const { test, describe } = require('node:test')
 const assert = require('node:assert')
 
-const ServerlessClient = require('../lib/client')
+const AequorClient = require('../lib/client')
 
 class FakePgClient {
   constructor() {
@@ -40,10 +40,10 @@ function makeFakePgLibrary() {
   return { Client, instances }
 }
 
-describe('ServerlessClient generation guard', () => {
+describe('AequorClient generation guard', () => {
   test('stale connect cannot resurrect disposed client', async () => {
     const lib = makeFakePgLibrary()
-    const c = new ServerlessClient({
+    const c = new AequorClient({
       host: 'x',
       user: 'u',
       password: 'p',

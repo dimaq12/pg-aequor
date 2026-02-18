@@ -78,7 +78,7 @@ if (process.argv[2] !== 'worker') {
 
 // --- WORKER PROCESS ---
 else {
-  const { ServerlessClient } = require('../index')
+  const { AequorClient } = require('../index')
   
   const type = process.env.WORKER_TYPE
   const id = process.env.WORKER_ID
@@ -86,7 +86,7 @@ else {
   // Parse DB URL
   const url = new URL(process.env.DB_CONN_STRING)
   
-  const client = new ServerlessClient({
+  const client = new AequorClient({
     user: url.username,
     password: url.password,
     host: url.hostname,

@@ -1,7 +1,7 @@
-const ServerlessClient = require('./lib/client')
+const AequorClient = require('./lib/client')
 
-// Canonical export: match serverless-postgres API.
+// Canonical export.
 module.exports = {
-  ServerlessClient,
+  AequorClient,
 }
 

@@ -1,7 +1,7 @@
 const { test, describe } = require('node:test')
 const assert = require('node:assert')
 
-const ServerlessClient = require('../lib/client')
+const AequorClient = require('../lib/client')
 
 class FakePgClient {
   constructor() {
@@ -42,11 +42,11 @@ function makeFakePgLibrary() {
   return { Client, instances }
 }
 
-describe('ServerlessClient tracing hooks', () => {
+describe('AequorClient tracing hooks', () => {
   test('onQueryStart/End hooks fire on successful query', async () => {
     const lib = makeFakePgLibrary()
     const calls = []
-    const c = new ServerlessClient({
+    const c = new AequorClient({
       host: 'x',
       user: 'u',
       database: 'd',
@@ -76,7 +76,7 @@ describe('ServerlessClient tracing hooks', () => {
   test('onQueryError hook fires on query failure', async () => {
     const lib = makeFakePgLibrary()
     const calls = []
-    const c = new ServerlessClient({
+    const c = new AequorClient({
       host: 'x',
       user: 'u',
       database: 'd',

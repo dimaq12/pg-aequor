@@ -20,16 +20,29 @@
   Crash-safe PostgreSQL client for <strong>Serverless runtimes</strong> (AWS Lambda / similar).
 </p>
 
-Standard <code>pg</code> + Lambda scale-outs often end in <strong>zombie connections</strong>:
-a Lambda freezes, its TCP socket stays alive on the DB, and a new wave of invocations keeps opening connections until you hit <code>max_connections</code>.
+Have you ever…
+
+- …had a Lambda “freeze”, then watched Postgres slowly fill up with <strong>idle zombie connections</strong> until you hit <code>max_connections</code>?
+- …seen bursts of <code>sorry, too many clients already</code> during traffic spikes?
+- …debugged <strong>random runtime crashes</strong> where the root cause was a dead PG socket (and the error bubbled out of an event handler)?
+- …felt like you need PgBouncer/RDS Proxy, but you just want a client-side fix?
+
+Standard <code>pg</code> + Lambda scale-outs often end in zombie connections: a Lambda freezes, its TCP socket stays alive on the DB, and a new wave of invocations keeps opening connections until you hit <code>max_connections</code>.
 
 <strong>pg-aequor</strong> prevents this using <strong>Signed Leases</strong> + a lightweight <strong>Distributed Reaper</strong>.
+
+## Use cases
+
+- **Zombie connection storms**: old frozen containers keep sockets around; new invocations create more connections; the DB falls over.
+- **“Unexplained” runtime exits**: some runtimes treat unhandled socket errors as fatal. `pg-aequor` swallows errors in pg event handlers and forces a safe reconnect path.
+- **Spiky cold starts**: retries with decorrelated jitter + SQLSTATE filtering smooth transient network/DB restarts without turning retries into a synchronized stampede.
 
 ## Table of contents
 
 - [Features](#features)
 - [Install](#install)
 - [Quick start](#quick-start)
+- [Use cases](#use-cases)
 - [How it works](#how-it-works-in-one-minute)
 - [Operational rules](#operational-rules-important)
 - [Configuration](#configuration)
@@ -57,9 +70,9 @@ npm install pg-aequor pg
 ## Quick start
 
 ```js
-const { ServerlessClient } = require('pg-aequor')
+const { AequorClient } = require('pg-aequor')
 
-const client = new ServerlessClient({
+const client = new AequorClient({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
@@ -92,8 +105,7 @@ We solve this via:
 
 ## Configuration
 
-<details>
-  <summary><strong>Lease / reaper (recommended)</strong></summary>
+### Lease / reaper (recommended)
 
 | Option | Type | Default | Notes |
 | --- | --- | --- | --- |
@@ -106,10 +118,7 @@ We solve this via:
 | `minConnectionIdleTimeSec` | `number` | `180` | Minimum idle seconds to consider a connection a candidate. |
 | `maxIdleConnectionsToKill` | `number` | `10` | Max zombies to kill in one pass. |
 
-</details>
-
-<details>
-  <summary><strong>Retries</strong></summary>
+### Retries
 
 | Option | Type | Default |
 | --- | --- | --- |
@@ -121,14 +130,12 @@ We solve this via:
 
 We use **decorrelated jitter** and **SQLSTATE-based** retry classification to avoid duplicating non-idempotent writes.
 
-</details>
-
 ## Observability (hooks)
 
 ```js
-const { ServerlessClient } = require('pg-aequor')
+const { AequorClient } = require('pg-aequor')
 
-const client = new ServerlessClient({
+const client = new AequorClient({
   // ...pg config...
   coordinationSecret: process.env.COORD_SECRET,
 
