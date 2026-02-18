@@ -2,13 +2,40 @@
   <img src="assets/pg-aequor-banner.png" alt="PG-Aequor banner" width="720" />
 </p>
 
-# pg-aequor
+<p align="center">
+  <a href="https://github.com/dimaq12/pg-aequor/actions/workflows/ci.yml">
+    <img alt="CI" src="https://github.com/dimaq12/pg-aequor/actions/workflows/ci.yml/badge.svg" />
+  </a>
+  <a href="https://www.npmjs.com/package/pg-aequor">
+    <img alt="npm" src="https://img.shields.io/npm/v/pg-aequor.svg" />
+  </a>
+  <a href="./LICENSE">
+    <img alt="license" src="https://img.shields.io/npm/l/pg-aequor.svg" />
+  </a>
+</p>
 
-Crash-safe PostgreSQL client for **Serverless runtimes** (AWS Lambda / similar).
+<h1 align="center">pg-aequor</h1>
 
-Standard `pg` + Lambda scale-outs often ends in **zombie connections**: a Lambda freezes, its TCP socket stays alive on the DB, and a new wave of invocations keeps opening more connections until you hit `max_connections`.
+<p align="center">
+  Crash-safe PostgreSQL client for <strong>Serverless runtimes</strong> (AWS Lambda / similar).
+</p>
 
-`pg-aequor` prevents this using **Signed Leases** + a lightweight **Distributed Reaper**.
+Standard <code>pg</code> + Lambda scale-outs often end in <strong>zombie connections</strong>:
+a Lambda freezes, its TCP socket stays alive on the DB, and a new wave of invocations keeps opening connections until you hit <code>max_connections</code>.
+
+<strong>pg-aequor</strong> prevents this using <strong>Signed Leases</strong> + a lightweight <strong>Distributed Reaper</strong>.
+
+## Table of contents
+
+- [Features](#features)
+- [Install](#install)
+- [Quick start](#quick-start)
+- [How it works](#how-it-works-in-one-minute)
+- [Operational rules](#operational-rules-important)
+- [Configuration](#configuration)
+- [Observability (hooks)](#observability-hooks)
+- [Production checklist](#production-checklist)
+- [FAQ](#faq)
 
 ## Features
 
@@ -25,7 +52,7 @@ Standard `pg` + Lambda scale-outs often ends in **zombie connections**: a Lambda
 npm install pg-aequor pg
 ```
 
-> `pg` is a **peer dependency**. Tested with `pg@^8.11.0`.
+> **Note:** `pg` is a peer dependency. Tested with `pg@^8.11.0`.
 
 ## Quick start
 
@@ -65,7 +92,8 @@ We solve this via:
 
 ## Configuration
 
-### Lease / reaper (recommended)
+<details>
+  <summary><strong>Lease / reaper (recommended)</strong></summary>
 
 | Option | Type | Default | Notes |
 | --- | --- | --- | --- |
@@ -78,7 +106,10 @@ We solve this via:
 | `minConnectionIdleTimeSec` | `number` | `180` | Minimum idle seconds to consider a connection a candidate. |
 | `maxIdleConnectionsToKill` | `number` | `10` | Max zombies to kill in one pass. |
 
-### Retries
+</details>
+
+<details>
+  <summary><strong>Retries</strong></summary>
 
 | Option | Type | Default |
 | --- | --- | --- |
@@ -89,6 +120,8 @@ We solve this via:
 | `maxQueryRetryTimeMs` | `number` | `15000` |
 
 We use **decorrelated jitter** and **SQLSTATE-based** retry classification to avoid duplicating non-idempotent writes.
+
+</details>
 
 ## Observability (hooks)
 
@@ -116,6 +149,26 @@ const client = new ServerlessClient({
   },
 })
 ```
+
+## Production checklist
+
+### Required Postgres privileges
+
+The reaper reads `pg_stat_activity` and calls `pg_terminate_backend()`.
+
+> **Heads up:** on managed Postgres, this may require elevated privileges (or be restricted by policy).
+> If the reaper can’t terminate backends, you’ll typically see permission errors and zombies will remain.
+
+### Coordination secret hygiene
+
+- Use a **separate secret** (not the DB password).
+- Keep it at least **16 bytes**.
+- Rotate carefully: a safe pattern is “deploy new secret everywhere” during a maintenance window, because old/new secrets won’t verify each other’s leases.
+
+### Recommended defaults
+
+- Start with a conservative `leaseTtlMs` (e.g. `90s`) and `minConnectionIdleTimeSec` (e.g. `180s`) to avoid self-inflicted churn.
+- Keep hooks lightweight (metrics only).
 
 ## FAQ
 
