@@ -1,48 +1,35 @@
+<p align="center">
+  <img src="assets/pg-aequor-banner.png" alt="PG-Aequor banner" width="720" />
+</p>
+
 # pg-aequor
 
-If you use standard `pg` in AWS Lambda, you are either a madman or you haven't yet seen your database die under a pile of zombie connections. This library is a wrapper that forces PostgreSQL and Serverless to coexist in peace.
+Crash-safe PostgreSQL client for **Serverless runtimes** (AWS Lambda / similar).
 
----
+Standard `pg` + Lambda scale-outs often ends in **zombie connections**: a Lambda freezes, its TCP socket stays alive on the DB, and a new wave of invocations keeps opening more connections until you hit `max_connections`.
 
-## Why isn't this just another wrapper?
+`pg-aequor` prevents this using **Signed Leases** + a lightweight **Distributed Reaper**.
 
-In standard environments, connections live long. In Lambda, they "freeze" in suspended instances. We solve this via **Signed Leases**:
+## Features
 
-1.  **Signed Leases**: Each connection signs itself in `application_name` (expiration + HMAC).
-2.  **Distributed Reaper**: A background "Reaper" scans the database and kills connections whose lease has expired.
-3.  **Advisory Locks**: Coordination is handled via Postgres Advisory Locks, so instances don't fight each other to clean up the mess.
+- **Signed leases in `application_name`**: each connection self-identifies with expiration + HMAC.
+- **Distributed reaper**: one request occasionally becomes the “leader” and reaps expired connections.
+- **Advisory locks**: coordination via Postgres locks (no external coordinator).
+- **Crash safety**: socket errors are swallowed from event handlers to prevent runtime crashes.
+- **Safe retries**: decorrelated jitter + SQLSTATE filtering for transient failures.
+- **Hooks**: lightweight observability callbacks (metrics/tracing).
 
----
+## Install
 
-## Technical Rules (Read this so it doesn't hurt)
+```bash
+npm install pg-aequor pg
+```
 
-*   **Disposable Idle**: If a connection is idle longer than the lease TTL, it is considered a corpse. Another instance will kill it. This is a feature, not a bug.
-*   **Crash Safety**: We swallow socket errors in `pg.Client` handlers. No more `Runtime.ExitError` crashing your entire Lambda.
-*   **Single Connection Architecture**: The Reaper runs on the *active* connection using Advisory Locks. It adds minimal latency to the "leader" request but prevents connection storms (Reaper-DOS) during massive scale-ups.
+> `pg` is a **peer dependency**. Tested with `pg@^8.11.0`.
 
----
+## Quick start
 
-## Configuration
-
-### Required Parameters (Lease/Reaper)
-
-| Parameter | Type | Description |
-| :--- | :--- | :--- |
-| `secret` | `string` | **Critical.** Shared secret for HMAC signing. Do NOT use your DB password. Must be at least 16 bytes. |
-| `leaseMode` | `string` | `'required'` (throws without secret) or `'optional'`. Default: `'required'`. |
-| `leaseTtlMs` | `number` | Lease Time-To-Live in milliseconds. Default: `90000` (90s). |
-
-### Retry Strategy
-
-We use **Decorrelated Jitter** and **SQLSTATE** filtering. Retries trigger only on transient errors (network, DB restart, connection limits).
-
----
-
-## Observability (Hooks)
-
-Do not put heavy logic in hooks. Use them for metrics.
-
-```javascript
+```js
 const { ServerlessClient } = require('pg-aequor')
 
 const client = new ServerlessClient({
@@ -50,8 +37,66 @@ const client = new ServerlessClient({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  
-  // Coordination Secret (Distinct from DB password)
+
+  // Coordination Secret (distinct from DB password)
+  secret: process.env.COORD_SECRET,
+})
+
+await client.connect()
+const res = await client.query('SELECT NOW()')
+await client.clean() // or: await client.end()
+```
+
+## How it works (in one minute)
+
+In standard environments, connections live long. In serverless, containers “freeze”.
+
+We solve this via:
+
+1. **Signed Leases**: each connection stores `expiration + signature` in `application_name`.
+2. **Distributed Reaper**: on connect (probabilistically), one instance scans `pg_stat_activity` and terminates expired connections.
+3. **Advisory Locks**: `pg_try_advisory_lock` ensures only one leader reaps at a time.
+
+## Operational rules (important)
+
+- **Disposable idle**: if a connection is idle longer than its lease TTL, it becomes eligible to be reaped by another instance.
+- **Single-connection architecture**: the reaper runs on the active connection (under lock) to avoid “reaper storms”.
+- **Hooks must be fast**: don’t do heavy work inside hooks; use them for metrics/tracing only.
+
+## Configuration
+
+### Lease / reaper (recommended)
+
+| Option | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `secret` | `string` | _(required)_ | Shared secret for HMAC signing. **Do not** use DB password. Must be at least 16 bytes. |
+| `leaseMode` | `'required' \| 'optional'` | `'required'` | If `optional` and `secret` is missing: lease/reaper/heartbeat are disabled. |
+| `leaseTtlMs` | `number` | `90000` | Lease TTL. |
+| `reaper` | `boolean` | `true` | Enable/disable reaper. |
+| `reaperRunProbability` | `number` | `0.1` | Probability of trying a reaper pass on connect (0..1). |
+| `reaperCooldownMs` | `number` | `30000` | Minimum time between reaper runs per container. |
+| `minConnectionIdleTimeSec` | `number` | `180` | Minimum idle seconds to consider a connection a candidate. |
+| `maxIdleConnectionsToKill` | `number` | `10` | Max zombies to kill in one pass. |
+
+### Retries
+
+| Option | Type | Default |
+| --- | --- | --- |
+| `retries` | `number` | `3` |
+| `minBackoff` | `number` | `100` |
+| `maxBackoff` | `number` | `2000` |
+| `maxConnectRetryTimeMs` | `number` | `15000` |
+| `maxQueryRetryTimeMs` | `number` | `15000` |
+
+We use **decorrelated jitter** and **SQLSTATE-based** retry classification to avoid duplicating non-idempotent writes.
+
+## Observability (hooks)
+
+```js
+const { ServerlessClient } = require('pg-aequor')
+
+const client = new ServerlessClient({
+  // ...pg config...
   secret: process.env.COORD_SECRET,
 
   hooks: {
@@ -59,23 +104,30 @@ const client = new ServerlessClient({
       console.warn(`Retry #${retries} due to ${err.code}`)
     },
     onClientDead: ({ source, meta }) => {
-      // Perfect for CloudWatch EMF or X-Ray
-      logToEMF('ClientDeath', 1, { sqlstate: meta?.sqlstate })
-    }
-  }
+      // Great place for EMF/X-Ray/etc
+      console.log('Client dead:', source, meta?.sqlstate)
+    },
+    onQueryStart: ({ startedAt }) => {
+      // tracing start
+    },
+    onQueryEnd: ({ duration }) => {
+      // tracing end
+    },
+  },
 })
-
-await client.connect()
-const res = await client.query('SELECT NOW()')
-await client.clean() // or await client.end()
 ```
 
----
+## FAQ
 
-## Installation
+### Will it kill my active connections?
 
-```bash
-npm install pg-aequor
-```
+No. The reaper only terminates connections that:
 
-> **Attention:** This library requires `pg` as a peer dependency. Tested on versions `^8.11.0`.
+- match this service prefix, and
+- have a **valid signature**, and
+- are **expired**, and
+- are **idle** for longer than your configured threshold.
+
+### Do I still need PgBouncer/RDS Proxy?
+
+If you already have a proxy and it works well for you, keep it. `pg-aequor` is a pure-client approach intended for cases where you can’t or don’t want to add extra infrastructure.
