@@ -27,6 +27,12 @@ export interface AequorClientHooks {
   onHeartbeatFail?: (payload: { gen: number; err: Error }) => void;
 
   /**
+   * Called when a reaper pass is attempted (best effort).
+   * Useful for metrics: how many zombies were killed and how long it took.
+   */
+  onReap?: (payload: { gen: number; locked: boolean; killed: number; durationMs: number }) => void;
+
+  /**
    * Called when the underlying pg.Client emits an 'error' event or ends unexpectedly.
    * This is a critical signal that the connection is dead.
    */
